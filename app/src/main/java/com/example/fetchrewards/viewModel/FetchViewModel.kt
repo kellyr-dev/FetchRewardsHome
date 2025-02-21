@@ -1,6 +1,7 @@
 package com.example.fetchrewards.viewModel
 
 
+import android.content.ClipData.Item
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,12 +31,14 @@ class FetchViewModel @Inject constructor(
                 val lista = response.body()!!
                 val filterList = lista.filter { it.name != null && !it.name.equals("") }
                 val sortedList = filterList.sortedWith(compareBy({it.listId}, {it.id}))
-                val mapList = sortedList.map { it.id }
-                println(mapList)
+
+                val itemMap: HashMap<Int, ItemModel> = lista.associateBy({ it.id }) as HashMap<Int, ItemModel>
+
                 val categories = filterList.groupBy { it.listId }.size
                 state = state.copy(
                     items = sortedList,
-                    count = categories
+                    count = categories,
+                    detailData = itemMap
                 )
             } else {
                 Log.e(TAG, "Error fetching: ${response.message()}")
@@ -49,5 +52,5 @@ data class ScreenState(
     val items : List<ItemModel> = emptyList(),
     val count: Int = 0,
     val page: Int = 1,
-    val detailData : ItemModel = ItemModel()
+    val detailData : Map<Int, ItemModel> = emptyMap()
 )
