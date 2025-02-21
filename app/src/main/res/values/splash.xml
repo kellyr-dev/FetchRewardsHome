@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.FetchRewards.MySplash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#300D38</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/fetch</item>
+        <item name="postSplashScreenTheme">@style/Theme.FetchRewards</item>
+    </style>
+
+</resources>
