@@ -11,23 +11,20 @@ import androidx.navigation.navArgument
 fun NavigationComponent(){
 
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "List screen") {
+    NavHost(
+        navController = navController,
+        startDestination = "List screen"
+    ) {
         composable("List screen"){
             ListScreen(navController = navController)
         }
-        composable("Detail Screen/{id}",
-            arguments = listOf(
-                navArgument(
-                    name = "id"
-                ){
-                    type = NavType.IntType
-                }
-            )
-        ){ id ->
-            id.arguments?.getInt("id")?.let { id1->
-                DetailScreen(id = id1)
-            }
 
+        composable("Detail Screen/{id}",
+            arguments = listOf( navArgument( name = "id"){
+                    type = NavType.IntType
+                })
+        ){
+            id -> id.arguments?.getInt("id")?.let { it-> DetailScreen(id = it) }
         }
 
     }

@@ -29,7 +29,6 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(
                 android.graphics.Color.TRANSPARENT
             )
-
         )
 
         setContent {
@@ -44,11 +43,10 @@ class MainActivity : ComponentActivity() {
 
                     start = Offset(Float.POSITIVE_INFINITY, 0f),
                     end = Offset(0f, Float.POSITIVE_INFINITY)
-
                 )
 
                 Surface(modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background) {
+                    /*color = MaterialTheme.colorScheme.background*/) {
 
                     Box(modifier = Modifier.fillMaxSize()
                         .background(linearGradientBrush)){

@@ -1,13 +1,16 @@
 package com.example.fetchrewards.navigation
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -26,7 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -52,23 +58,25 @@ fun ListScreen(
     itemViewModel: FetchViewModel = hiltViewModel()
 ) {
     val state = itemViewModel.state
-    var selectedChip by remember { mutableIntStateOf(0) }
+    var selectedChip by rememberSaveable { mutableIntStateOf(0) } // small bug fixed here!
 
     val filteredItems = if (selectedChip == 0) {
-            state.items
-        } else {
-            state.items.filter { it.listId == selectedChip }
-        }
+        state.items
+    } else {
+        state.items.filter { it.listId == selectedChip }
+    }
 
     Scaffold(
         modifier = Modifier.background(Color.Transparent),
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Discover Fetch Rewards",
+                    Text(
+                        text = "Discover Fetch Rewards",
                         fontFamily = FontFamily(Font(R.font.alexandria_medium)),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp)
+                        fontSize = 24.sp
+                    )
                 },
             )
         },
@@ -84,16 +92,40 @@ fun ListScreen(
                                 selectedChip = i
                             },
                             label = {
-                                if (i == 0) Text("All Categories", fontFamily = FontFamily(Font(R.font.alexandria_medium))) else Text("Items $i", fontFamily = FontFamily(Font(R.font.alexandria_medium)))},
+                                if (i == 0) Text(
+                                    "All Categories",
+                                    fontFamily = FontFamily(Font(R.font.alexandria_medium))
+                                ) else Text(
+                                    "Items $i",
+                                    fontFamily = FontFamily(Font(R.font.alexandria_medium))
+                                )
+                            },
                             modifier = Modifier.padding(end = 8.dp)
                         )
                     }
                 }
 
-                LazyColumn {
-                    items(filteredItems.size) { index ->
-                        ItemCard(itemIndex = index, itemList = filteredItems, navController = navController)
+                AnimatedContent(targetState = filteredItems.isEmpty(), label = "") { isEmpty ->
+                    if (isEmpty) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+
+                    } else {
+                        LazyColumn {
+                            items(filteredItems.size) { index ->
+                                ItemCard(
+                                    itemIndex = index,
+                                    itemList = filteredItems,
+                                    navController = navController
+                                )
+                            }
+                        }
                     }
+
                 }
             }
         }
@@ -102,7 +134,11 @@ fun ListScreen(
 
 
 @Composable
-fun ItemCard(itemIndex: Int, itemList: List<ItemModel>, navController: NavHostController) {
+fun ItemCard(
+    itemIndex: Int,
+    itemList: List<ItemModel>,
+    navController: NavHostController
+) {
 
     val item = itemList[itemIndex]
 
@@ -113,7 +149,7 @@ fun ItemCard(itemIndex: Int, itemList: List<ItemModel>, navController: NavHostCo
                 navController.navigate("Detail Screen/${item.id}")
             },
         elevation = CardDefaults.cardElevation(8.dp),
-    ){
+    ) {
         Row(modifier = Modifier.padding(10.dp), Arrangement.SpaceEvenly) {
             Image(
                 painter = painterResource(id = R.drawable.logo_item_purple),
@@ -125,8 +161,9 @@ fun ItemCard(itemIndex: Int, itemList: List<ItemModel>, navController: NavHostCo
                     .padding(2.dp)
 
             )
-            Column (modifier = Modifier.fillMaxWidth()) {
-                Text(text = item.name,
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = item.name,
                     modifier = Modifier
                         .padding(start = 16.dp, top = 8.dp)
                         .basicMarquee(),
@@ -138,7 +175,8 @@ fun ItemCard(itemIndex: Int, itemList: List<ItemModel>, navController: NavHostCo
 
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = item.listId.toString(),
+                Text(
+                    text = item.listId.toString(),
                     modifier = Modifier
                         .padding(start = 16.dp)
                         .clip(RoundedCornerShape(8.dp)),
