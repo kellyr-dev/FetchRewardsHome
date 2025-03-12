@@ -35,7 +35,8 @@ import com.example.fetchrewards.viewModel.FetchViewModel
 fun DetailScreen(id: Int){
 
     val viewModel : FetchViewModel = hiltViewModel()
-    val model = viewModel.state.detailData.get(id)
+    //val model = viewModel.state.detailData.get(id)
+    val model = viewModel.state.value.detailData.get(id)
 
     Column (
         modifier = Modifier

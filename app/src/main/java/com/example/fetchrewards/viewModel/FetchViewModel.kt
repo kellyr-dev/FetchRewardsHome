@@ -3,14 +3,18 @@ package com.example.fetchrewards.viewModel
 
 import android.content.ClipData.Item
 import android.util.Log
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fetchrewards.data.model.ItemModel
 import com.example.fetchrewards.data.remote.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,7 +25,10 @@ class FetchViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-    var state by mutableStateOf(ScreenState())
+    //var state by mutableStateOf(ScreenState()) // compose
+
+    private val _state = mutableStateOf(ScreenState())  // Assuming your state class is called ItemState
+    val state: State<ScreenState> get() = _state
 
     init {
         viewModelScope.launch {
@@ -35,7 +42,7 @@ class FetchViewModel @Inject constructor(
                 val itemMap: HashMap<Int, ItemModel> = lista.associateBy({ it.id }) as HashMap<Int, ItemModel>
 
                 val categories = filterList.groupBy { it.listId }.size
-                state = state.copy(
+                _state.value = _state.value.copy(
                     items = sortedList,
                     count = categories,
                     detailData = itemMap
@@ -45,6 +52,14 @@ class FetchViewModel @Inject constructor(
             }
         }
     }
+
+    fun deleteById(item: ItemModel) {
+
+        val updatedList = _state.value.items.filter { it.id != item.id }
+        _state.value = _state.value.copy(items = updatedList)
+        Log.d("REMOVED:", updatedList.toString())
+    }
+
 }
 
 data class ScreenState(

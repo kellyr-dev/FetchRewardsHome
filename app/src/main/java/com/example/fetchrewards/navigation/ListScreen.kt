@@ -1,10 +1,12 @@
 package com.example.fetchrewards.navigation
 
+import android.content.res.Resources.Theme
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +21,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -48,6 +53,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.fetchrewards.R
 import com.example.fetchrewards.data.model.ItemModel
+import com.example.fetchrewards.ui.theme.AquaBlue
+import com.example.fetchrewards.ui.theme.FetchColor
+import com.example.fetchrewards.ui.theme.PurpleGrey40
+import com.example.fetchrewards.ui.theme.PurpleGrey80
 import com.example.fetchrewards.viewModel.FetchViewModel
 
 
@@ -61,9 +70,9 @@ fun ListScreen(
     var selectedChip by rememberSaveable { mutableIntStateOf(0) } // small bug fixed here!
 
     val filteredItems = if (selectedChip == 0) {
-        state.items
+        state.value.items
     } else {
-        state.items.filter { it.listId == selectedChip }
+        state.value.items.filter { it.listId == selectedChip }
     }
 
     Scaffold(
@@ -81,13 +90,18 @@ fun ListScreen(
             )
         },
         content = { paddingValues ->
-            Column(modifier = Modifier.padding(paddingValues)) {
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+            ) {
 
                 LazyRow(
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    items(state.count + 1) { i ->
+                    items(state.value.count + 1) { i ->
                         AssistChip(
+                            modifier = Modifier
+                                .padding(end = 8.dp),
                             onClick = {
                                 selectedChip = i
                             },
@@ -100,7 +114,13 @@ fun ListScreen(
                                     fontFamily = FontFamily(Font(R.font.alexandria_medium))
                                 )
                             },
-                            modifier = Modifier.padding(end = 8.dp)
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = if (i == selectedChip) {
+                                    if (isSystemInDarkTheme()) PurpleGrey40 else PurpleGrey80
+
+                                } else Color.Transparent, // Cambiar color directamente
+                                )
+
                         )
                     }
                 }
@@ -120,12 +140,14 @@ fun ListScreen(
                                 ItemCard(
                                     itemIndex = index,
                                     itemList = filteredItems,
-                                    navController = navController
+                                    navController = navController,
+                                    onDelete = { item ->
+                                        itemViewModel.deleteById(item)
+                                    }
                                 )
                             }
                         }
                     }
-
                 }
             }
         }
@@ -137,16 +159,19 @@ fun ListScreen(
 fun ItemCard(
     itemIndex: Int,
     itemList: List<ItemModel>,
-    navController: NavHostController
+    navController: NavHostController,
+    onDelete: (item: ItemModel) -> Unit
 ) {
 
     val item = itemList[itemIndex]
+
 
     Card(
         Modifier
             .padding(10.dp)
             .clickable {
-                navController.navigate("Detail Screen/${item.id}")
+                onDelete(item)
+                //navController.navigate("Detail Screen/${item.id}")
             },
         elevation = CardDefaults.cardElevation(8.dp),
     ) {

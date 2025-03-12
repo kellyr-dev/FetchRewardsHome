@@ -11,3 +11,7 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 val FetchColor = Color(0xFFFBA919)
+val OrangeYellow3 = Color(0xfff4cf65)
+val DarkerButtonBlue = Color(0xff566894)
+val LightRed = Color(0xfffc879a)
+val AquaBlue = Color(0xff9aa5c4)
