@@ -1,6 +1,7 @@
 package com.example.fetchrewards.navigation
 
 import android.content.res.Resources.Theme
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,7 +20,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
@@ -27,14 +32,23 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SwipeToDismiss
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -54,10 +69,12 @@ import androidx.navigation.NavHostController
 import com.example.fetchrewards.R
 import com.example.fetchrewards.data.model.ItemModel
 import com.example.fetchrewards.ui.theme.AquaBlue
+import com.example.fetchrewards.ui.theme.DarkRed
 import com.example.fetchrewards.ui.theme.FetchColor
 import com.example.fetchrewards.ui.theme.PurpleGrey40
 import com.example.fetchrewards.ui.theme.PurpleGrey80
 import com.example.fetchrewards.viewModel.FetchViewModel
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,13 +83,13 @@ fun ListScreen(
     navController: NavHostController,
     itemViewModel: FetchViewModel = hiltViewModel()
 ) {
-    val state = itemViewModel.state
+    val state by itemViewModel.state.collectAsState()
     var selectedChip by rememberSaveable { mutableIntStateOf(0) } // small bug fixed here!
 
     val filteredItems = if (selectedChip == 0) {
-        state.value.items
+        state.items
     } else {
-        state.value.items.filter { it.listId == selectedChip }
+        state.items.filter { it.listId == selectedChip }
     }
 
     Scaffold(
@@ -98,7 +115,7 @@ fun ListScreen(
                 LazyRow(
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    items(state.value.count + 1) { i ->
+                    items(state.count + 1) { i ->
                         AssistChip(
                             modifier = Modifier
                                 .padding(end = 8.dp),
@@ -117,7 +134,6 @@ fun ListScreen(
                             colors = AssistChipDefaults.assistChipColors(
                                 containerColor = if (i == selectedChip) {
                                     if (isSystemInDarkTheme()) PurpleGrey40 else PurpleGrey80
-
                                 } else Color.Transparent, // Cambiar color directamente
                                 )
 
@@ -135,16 +151,16 @@ fun ListScreen(
                         }
 
                     } else {
-                        LazyColumn {
+                        LazyColumn(
+                        ){
                             items(filteredItems.size) { index ->
-                                ItemCard(
-                                    itemIndex = index,
-                                    itemList = filteredItems,
+                                FetchItem(
+                                    fetchModel = filteredItems[index],
                                     navController = navController,
-                                    onDelete = { item ->
-                                        itemViewModel.deleteById(item)
-                                    }
-                                )
+                                    modifier = Modifier,
+                                    onRemove = {
+                                        item -> itemViewModel.deleteById(item)
+                                    })
                             }
                         }
                     }
@@ -157,21 +173,16 @@ fun ListScreen(
 
 @Composable
 fun ItemCard(
-    itemIndex: Int,
-    itemList: List<ItemModel>,
+    fetchItem: ItemModel,
     navController: NavHostController,
-    onDelete: (item: ItemModel) -> Unit
 ) {
-
-    val item = itemList[itemIndex]
-
 
     Card(
         Modifier
             .padding(10.dp)
             .clickable {
-                onDelete(item)
-                //navController.navigate("Detail Screen/${item.id}")
+                // onDelete(item)
+                navController.navigate("Detail Screen/${fetchItem.id}")
             },
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
@@ -188,7 +199,7 @@ fun ItemCard(
             )
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = item.name,
+                    text = fetchItem.name,
                     modifier = Modifier
                         .padding(start = 16.dp, top = 8.dp)
                         .basicMarquee(),
@@ -201,7 +212,7 @@ fun ItemCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = item.listId.toString(),
+                    text = fetchItem.listId.toString(),
                     modifier = Modifier
                         .padding(start = 16.dp)
                         .clip(RoundedCornerShape(8.dp)),
@@ -220,4 +231,73 @@ fun ItemCard(
 
     }
 
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DismissBackground(dismissState: SwipeToDismissBoxState) {
+    val color = when (dismissState.dismissDirection) {
+        SwipeToDismissBoxValue.StartToEnd -> DarkRed
+        SwipeToDismissBoxValue.EndToStart -> AquaBlue
+        SwipeToDismissBoxValue.Settled -> Color.Transparent
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color)
+            .padding(12.dp, 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Icon(
+            Icons.Default.Delete,
+            contentDescription = "delete"
+        )
+        Spacer(modifier = Modifier)
+        Icon(
+            painter = painterResource(R.drawable.baseline_archive_24),
+            contentDescription = "Archive"
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FetchItem(
+    fetchModel : ItemModel,
+    navController : NavHostController,
+    modifier: Modifier = Modifier,
+    onRemove: (ItemModel) -> Unit)
+{
+
+    val context = LocalContext.current
+    val currentItem by rememberUpdatedState(fetchModel)
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            when(it) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onRemove(currentItem)
+                    Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onRemove(currentItem)
+                    Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
+                }
+                SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
+            }
+            return@rememberSwipeToDismissBoxState true
+        },
+        // positional threshold of 25%
+        positionalThreshold = { it * .25f }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        backgroundContent = { DismissBackground(dismissState)},
+        content = {
+            ItemCard(
+                fetchItem = fetchModel,
+                navController = navController)
+        })
 }

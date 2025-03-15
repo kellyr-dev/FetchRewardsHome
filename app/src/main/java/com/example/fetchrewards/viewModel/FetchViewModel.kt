@@ -15,6 +15,9 @@ import com.example.fetchrewards.data.model.ItemModel
 import com.example.fetchrewards.data.remote.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,10 +28,11 @@ class FetchViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
 
-    //var state by mutableStateOf(ScreenState()) // compose
+    //private val _state = mutableStateOf(ScreenState())  // next -> change to StateFlow
+    //val state: State<ScreenState> get() = _state
 
-    private val _state = mutableStateOf(ScreenState())  // Assuming your state class is called ItemState
-    val state: State<ScreenState> get() = _state
+    private val _state = MutableStateFlow(ScreenState())
+    val state : StateFlow<ScreenState> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {

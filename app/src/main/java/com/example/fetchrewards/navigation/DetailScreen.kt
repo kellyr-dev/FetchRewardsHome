@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,8 +37,9 @@ import com.example.fetchrewards.viewModel.FetchViewModel
 fun DetailScreen(id: Int){
 
     val viewModel : FetchViewModel = hiltViewModel()
-    //val model = viewModel.state.detailData.get(id)
-    val model = viewModel.state.value.detailData.get(id)
+    val model by viewModel.state.collectAsState()
+
+    val modelId = model.detailData.get(id)
 
     Column (
         modifier = Modifier
@@ -65,7 +68,7 @@ fun DetailScreen(id: Int){
                 .padding(start = 40.dp, top = 4.dp, end = 40.dp)
         ){
             Text(
-                text = model?.name.toString(),
+                text = modelId?.name.toString(),
                 modifier = Modifier
                     .padding(4.dp)
                     .basicMarquee(),
@@ -78,7 +81,7 @@ fun DetailScreen(id: Int){
             )
 
             Text(
-                text = "Category "+model?.listId.toString(),
+                text = "Category "+modelId?.listId.toString(),
                 modifier = Modifier
                     .padding(4.dp)
                     .basicMarquee(),
